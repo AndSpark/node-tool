@@ -1,12 +1,17 @@
 <template>
 	<div>
-		<p>123456</p>
+		<main-view></main-view>
 	</div>
 </template>
 
 <script lang="ts">
 import { Vue, Component } from 'vue-property-decorator'
-@Component({})
+import MainView from '@/components/MainView.vue'
+@Component({
+	components: {
+		MainView,
+	},
+})
 export default class Home extends Vue {}
 </script>
 
