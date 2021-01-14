@@ -6,7 +6,6 @@ import { ImageController } from './image/image.controller';
 import { ImageService } from './image/image.service';
 import { MulterConfigService } from './upload/multerConfig.service';
 import { UploadController } from './upload/upload.controller';
-import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [MulterModule.registerAsync({

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { MulterOptionsFactory, MulterModuleOptions } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { diskStorage } from 'multer';
+import * as fs from 'fs'
+import * as path from 'path'
 /**
  * 上传的文件配置服务
  */
@@ -23,7 +25,8 @@ export class MulterConfigService implements MulterOptionsFactory {
       },
       storage: diskStorage({
         destination: (req, file, cb) => {
-          cb(null, './upload');
+          
+          cb(null, './upload/origin' );
       },
       filename: (req, file, cb) => {
           cb(null, file.originalname);
