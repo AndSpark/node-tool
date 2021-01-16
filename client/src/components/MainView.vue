@@ -8,7 +8,7 @@
 			</v-col>
 
 			<v-col cols="12" sm="6">
-				<v-sheet min-height="70vh" rounded="lg" class="pa-8">
+				<v-sheet min-height="80vh" rounded="lg" class="pa-8 sheet-main">
 					<slot name="c"></slot>
 				</v-sheet>
 			</v-col>

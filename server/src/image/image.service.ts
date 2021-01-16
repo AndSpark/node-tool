@@ -45,14 +45,14 @@ export class ImageService {
       let fileinfo = await sharp(data).resize(resize).extend(extend).toFile(outPath)
       return {
         ...fileinfo,
-        url: 'http://localhost:3000' + file.destination.slice(1).replace('origin', 'after') + '/' + dir + '/' + file.filename,
+        url: 'http://192.168.3.50:3000' + file.destination.slice(1).replace('origin', 'after') + '/' + dir + '/' + file.filename,
         name:file.filename
       }
     }))
     await compressing.zip.compressDir(dirPath, dirPath+'.zip')
     return {
       filesInfo,
-      download:'http://localhost:3000/upload/after/'  + dir + '.zip'
+      download:'http://192.168.3.50:3000/upload/after/'  + dir + '.zip'
     }
   }
 

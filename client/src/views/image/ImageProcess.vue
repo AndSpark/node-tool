@@ -17,7 +17,14 @@
 						@change="fileChange"
 						@click:clear="imagesInfo.list = []"
 					></v-file-input>
-					<v-btn @click="upload" class="ml-10">确认上传</v-btn>
+					<v-btn @click="upload" class="ml-10" v-if="!downloadUrl.length && !Processing"
+						>确认上传</v-btn
+					>
+				</v-row>
+				<v-row v-if="downloadUrl.length" class="mt-10">
+					<v-spacer></v-spacer>
+					<v-subheader>图片处理完成，点击右边按钮下载压缩包</v-subheader>
+					<v-btn :href="downloadUrl">下载</v-btn>
 				</v-row>
 				<v-row class="mt-10">
 					<v-col cols="3" v-for="img in currentImages" :key="img.name">
@@ -99,6 +106,14 @@
 				</v-card>
 			</template>
 		</MainView>
+		<v-snackbar v-model="Uploading" centered>
+			<v-progress-circular indeterminate color="green"></v-progress-circular>
+			正在上传中
+		</v-snackbar>
+		<v-snackbar v-model="Processing" centered>
+			<v-progress-circular indeterminate color="green"></v-progress-circular>
+			正在处理中
+		</v-snackbar>
 	</div>
 </template>
 
@@ -156,7 +171,9 @@ export default class ImageProcess extends Vue {
 		files: [],
 	}
 
-	download = ''
+	Uploading = false
+	Processing = false
+	downloadUrl = ''
 
 	get currentImages() {
 		let start = (this.imagesInfo.page - 1) * this.imagesInfo.limit
@@ -165,6 +182,7 @@ export default class ImageProcess extends Vue {
 	}
 
 	fileChange(files: File[]) {
+		this.downloadUrl = ''
 		const data = new FormData()
 		files.forEach((file: any) => {
 			data.append('files', file)
@@ -189,18 +207,24 @@ export default class ImageProcess extends Vue {
 	}
 
 	async upload() {
+		this.Uploading = true
 		let { data } = await this.$http.post('upload/image', this.data, {
 			headers: {
 				'Content-Type': 'multipart/form-data',
 			},
 		})
+		this.Uploading = false
 		this.imageProcess.files = data
 		this.process()
 	}
 
 	async process() {
+		this.Processing = true
+
 		let { data } = await this.$http.post('image/process', this.imageProcess)
-		this.download = data.download
+		this.Processing = false
+
+		this.downloadUrl = data.download
 		let filesInfo = data.filesInfo
 		this.imagesInfo.list = this.imagesInfo.list.map((img: any) => {
 			let afterImg = filesInfo.find((v: any) => {

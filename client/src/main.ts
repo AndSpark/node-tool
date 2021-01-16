@@ -4,8 +4,9 @@ import router from './router'
 import vuetify from './plugins/vuetify';
 import Axios from 'axios'
 
+console.log(process.env);
 Vue.prototype.$http = Axios.create({
-  baseURL:'http://localhost:3000'
+  baseURL:process.env.VUE_APP_URL
 })
 
 Vue.config.productionTip = false

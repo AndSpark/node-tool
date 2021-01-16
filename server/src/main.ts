@@ -9,7 +9,7 @@ async function bootstrap() {
     prefix:'/upload/'
   })
   app.enableCors()
-  app.use(compression())
   await app.listen(3000);
+  app.use(compression())
 }
 bootstrap();

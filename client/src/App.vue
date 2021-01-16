@@ -40,7 +40,7 @@ export default Vue.extend({
 			},
 			{
 				label: '产品上传',
-				link: '/',
+				link: '/productUpload',
 			},
 			{
 				label: '数据库翻译',
@@ -48,7 +48,7 @@ export default Vue.extend({
 			},
 			{
 				label: '网页翻译',
-				link: '/',
+				link: '/htmlTranslation',
 			},
 		],
 	}),
