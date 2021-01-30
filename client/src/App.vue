@@ -44,7 +44,7 @@ export default Vue.extend({
 			},
 			{
 				label: '数据库翻译',
-				link: '/',
+				link: '/sqliteTranslation',
 			},
 			{
 				label: '网页翻译',

@@ -4,6 +4,7 @@ import Home from '@/views/Home.vue'
 import ImageProcess from '@/views/image/ImageProcess.vue'
 import HtmlTranslation from '@/views/translation/HtmlTranslation.vue'
 import ProductUpload from '@/views/product/ProductUpload.vue'
+import SqliteTranslation from '@/views/translation/SqliteTranslation.vue'
 Vue.use(VueRouter)
 
 const routes: Array<RouteConfig> = [
@@ -22,7 +23,11 @@ const routes: Array<RouteConfig> = [
   {
     path: '/productUpload',
     component:ProductUpload
-  }
+  },
+  {
+    path: '/sqliteTranslation',
+    component:SqliteTranslation
+  },
 ]
 
 const router = new VueRouter({

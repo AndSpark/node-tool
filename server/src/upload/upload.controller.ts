@@ -1,5 +1,5 @@
 import {  Controller, Post,  UploadedFile,  UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { FilesInterceptor} from '@nestjs/platform-express'
+import { FileInterceptor, FilesInterceptor} from '@nestjs/platform-express'
 
 @Controller('upload')
 export class UploadController {
@@ -15,7 +15,12 @@ export class UploadController {
   }
   @Post('product')
   @UseInterceptors(FilesInterceptor('file'))
-  uploadProduct(@UploadedFiles() files:any) {
+  uploadProduct(@UploadedFiles() files: any) {
     return files 
+  }
+  @Post('sqlite')
+  @UseInterceptors(FilesInterceptor('file'))
+  uploadSqilte(@UploadedFiles() files: any) {
+    return files
   }
 }

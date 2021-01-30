@@ -1,4 +1,4 @@
-import lodash from 'lodash'
+import * as  lodash from 'lodash'
 const html2texts = require('./html2texts')
 const fanyi = require('./fanyi')
 const render = require('posthtml-render')
@@ -17,21 +17,30 @@ module.exports = async function translateHtml(html, from = 'zh', to = 'en') {
 		return pre + cur.origin + '\n'
 	}, '')
 	let res
-
 	try {
-		res = await fanyi(words, from, to)
+		let {data} = await fanyi(words, from, to)
+		res = data
 	} catch (error) {
 		console.log('翻译出错')
 	}
-
+	
 	let data = localTexts.map((item, i) => {
+		let reg = /^[0-9]+\.?[0-9]*$/
+		if (reg.test(item.origin)) {
+			return { 
+				origin: item.origin,
+				local: item.origin,
+			}
+		}
 		return {
 			origin: item.origin,
 			local: res[i],
 		}
 	})
-
+	
 	const { texts: originTexts, tree } = html2texts(html)
+	
+
 	originTexts.forEach((item, index) => {
 		lodash.set(tree, item.paths, data[index].local)
 	})

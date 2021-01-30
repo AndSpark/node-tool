@@ -2,42 +2,45 @@ import * as fs from 'fs'
 const path = require('path');
 let info:info, sqliteDB;
 const moment = require('moment');
-const SqliteDB = require('./utils/sqliteDB').SqliteDB;
-const { readFiles } = require('./utils/file');
+const SqliteDB = require('./utils/sqliteDB');
 const translate = require('./utils/fanyi');
 const { htmlEncode, htmlDecode } = require('./utils/htmlEncode');
 const translateHtml = require('./utils/translateHtml');
 
 interface info {
-  sitename: string,
-  siteImgPath: string,
+  sitename?: string,
+  siteImgPath?: string,
   siteDBPath: string,
-  pcode: number,
-  acode: string,
-  lang: string,
-  translateLang: string,
-  translateAcode: string,
-  outPath:string
+  pcode?: number,
+  acode?: string,
+  outPath?:string,
+  lang?: string,
+  translateLang?: string,
+  translateAcode?: string,
+  isFileName?:boolean
 }
 
 class Sqlite {
   ay_content_sortLength: number;
   constructor(infos:info) {
     info = infos;
-    sqliteDB = new SqliteDB(info.siteDBPath);
+    sqliteDB = new SqliteDB();
   }
 
   async addProduct() {
+    await sqliteDB.init(info.siteDBPath)
     let product = await this.addProductArr(info.siteImgPath, 2)
     await this.toAySort(product, info.acode)
-    await this.toAyContent(product, info.acode, info.outPath, info.sitename)
-    this.save();
+    await this.toAyContent(product, info.acode, info.outPath, info.sitename,info.isFileName)
+    await this.save();
   }
 
-  async translateTable() {
-    await this.sortTranslate();
-    await this.contentTranslate();
-    this.save();
+
+  async translateTable(callback) {
+    await sqliteDB.init(info.siteDBPath)
+    await this.sortTranslate(callback);
+    await this.contentTranslate(callback);
+    await this.save();
   }
 
   async addProductArr(dirPath: string, pcode:number ) {
@@ -127,10 +130,10 @@ class Sqlite {
       ]
     })
 
-    this.addSortSql(sortArr);
+    await this.addSortSql(sortArr);
   }
 
-  async toAyContent(product, acode,outPath,site) {
+  async toAyContent(product, acode,outPath,site,isFileName) {
 
     function toContent(product: any[]): any[] {
       return product.reduce((pre, cur) => {
@@ -147,21 +150,22 @@ class Sqlite {
     let ContentArr = toContent(product)
     const today = moment().format('YYYYMMDD')
     const now = moment().format('YYYYMMDDHHmm')
-    fs.mkdirSync(path.join(outPath, today))
-  
+    const dirPath = path.join(outPath, today)
+    fs.mkdirSync(dirPath)
+    
     ContentArr =  ContentArr.map((v,i) => {
       let { name, dir, ext } = path.parse(v.path)
       let imgBuffer = fs.readFileSync(v.path)
       let imgName = now + i + ext
       let imgPath = path.join(outPath, today, imgName)
       fs.writeFileSync(imgPath, imgBuffer)
-  
+      
       return [
         v.id,
         acode,
         v.scode,
         '',
-        name,
+        isFileName ? name : dir.match(/product\\.*$/)[0].replace('product\\', ''),
         '#333333',
         '',
         '',
@@ -190,11 +194,11 @@ class Sqlite {
         moment().format('YYYY-MM-DD HH:mm:ss'),
       ]
     })
-    this.addContentSql(ContentArr);
-
+    await this.addContentSql(ContentArr);
+    return dirPath
   }
 
-  async sortTranslate() {
+  async sortTranslate(callback) {
     let table = 'ay_content_sort';
     let ay_cotent_sortTable:any = await this.getTableListSql(table);
     let ids = ay_cotent_sortTable.map((v) => v.id);
@@ -204,8 +208,8 @@ class Sqlite {
       return pre + '\n' + cur.name;
     }, '');
 
-    let transArr = await translate(words, info.lang, info.translateLang);
-
+    let {data:transArr,total} = await translate(words, info.lang, info.translateLang);
+    callback(total)
     let tableContent = ay_cotent_sortTable.map((item, i) => {
       item.id = item.id * 1 + l;
       item.scode = String(item.scode * 1 + l);
@@ -217,10 +221,11 @@ class Sqlite {
       return Object.values(item);
     });
 
-    this.addSortSql(tableContent);
+    await this.addSortSql(tableContent);
+    return total
   }
 
-  async contentTranslate() {
+  async contentTranslate(callback) {
     let table = 'ay_content';
     let ay_contentTable:any = await this.getTableListSql(table);
     let ids = ay_contentTable.map((v) => v.id);
@@ -228,7 +233,9 @@ class Sqlite {
 
     let transArr = await Promise.all(
       ay_contentTable.map(async (v) => {
-        let title = await translate(v.title, info.lang, info.translateLang);
+        let { data: title, total } = await translate(v.title, info.lang, info.translateLang);
+        callback(total)
+        
         if (!title) {
           title = ' ';
         }
@@ -248,7 +255,6 @@ class Sqlite {
 
         if (item.content.length) {
           let html = htmlDecode(item.content).replace(/\&.+?;/g, ' ');
-
           let newHtml = await translateHtml(
             html,
             info.lang,
@@ -262,7 +268,7 @@ class Sqlite {
       }),
     );
 
-    this.addContentSql(tableContent);
+    await this.addContentSql(tableContent);
   }
 
   async getStartId(table, types) {
@@ -275,7 +281,6 @@ class Sqlite {
       return ++ids[i];
     });
   }
-
 
   getTableListSql(table) {
     return new Promise((resolve, reject) => {
@@ -292,33 +297,34 @@ class Sqlite {
     let querySql = `select ${id} from ${table} order by cast(${id} as float) desc limit 1`;
     return new Promise((resolve, reject) => {
       sqliteDB.queryData(querySql, function (arr) {
+        
         resolve(arr[0][id]);
       });
     });
   }
 
-  addSortSql(contentArr) {
+  async addSortSql(contentArr) {
     let insertExtSql =
       'insert into ay_content_sort(id,acode,mcode,pcode,scode,name,listtpl,contenttpl,status,outlink,subname,ico,pic,title,keywords,description,filename,sorting,create_user,update_user,create_time,update_time) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-    sqliteDB.insertData(insertExtSql, contentArr);
+    await sqliteDB.insertData(insertExtSql, contentArr);
   }
 
-  addContentSql(contentArr) {
+  async addContentSql(contentArr) {
     let insertExtSql =
       'insert into ay_content(id,acode,scode,subscode,title,titlecolor,subtitle,filename,author,source,outlink,date,ico,pics,content,tags,enclosure,keywords,description,sorting,status,istop,isrecommend,isheadline,visits,likes,oppose,create_user,update_user,create_time,update_time) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
-    sqliteDB.insertData(insertExtSql, contentArr);
+      await sqliteDB.insertData(insertExtSql, contentArr);
   }
 
-  addExtSql(contentArr) {
+  async addExtSql(contentArr) {
     var insertExtSql =
       'insert into ay_content_ext(extid,contentid,ext_Origin,ext_Name,ext_Certification,ext_Model,ext_Quantity,ext_Price,ext_Details,ext_Time,ext_Payment,ext_Ability) values(?,?,?,?,?,?,?,?,?,?,?,?)';
 
-    sqliteDB.insertData(insertExtSql, contentArr);
+      await sqliteDB.insertData(insertExtSql, contentArr);
   }
 
-  save() {
-    sqliteDB.close();
+  async save() {
+    await sqliteDB.close();
   }
 }
 

@@ -1,6 +1,5 @@
-import dayjs from 'dayjs'
-import parser from 'posthtml-parser'
-
+import * as dayjs from 'dayjs'
+const parser =require('posthtml-parser')
 module.exports = html => {
 	const texts = []
 	const tree = parser(html)

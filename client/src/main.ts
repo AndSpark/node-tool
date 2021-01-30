@@ -6,7 +6,8 @@ import Axios from 'axios'
 
 console.log(process.env);
 Vue.prototype.$http = Axios.create({
-  baseURL:process.env.VUE_APP_URL
+  baseURL: process.env.VUE_APP_URL,
+  timeout:60000
 })
 
 Vue.config.productionTip = false

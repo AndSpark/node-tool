@@ -1,13 +1,12 @@
 import  axios from 'axios'
-import SparkMD5 from 'spark-md5'
 // const appid = '20201208000641832'
 // const secret = 'QHFmDIXHEK6JGmR8S3Vg'
-
+const SparkMD5 = require('spark-md5')
 const appid = '20201215000647582'
 const secret = '0IfZkeEAc8PkRIseU_7y'
 
 let instanceNum = 0
-let maxNum = 5
+let maxNum = 10
 let total = 0
 module.exports = function fanyi(word, from = 'zh', to = 'en') {
 	const salt = Date.now()
@@ -24,7 +23,6 @@ module.exports = function fanyi(word, from = 'zh', to = 'en') {
 					let timer = null
 					await new Promise(resolve => {
 						timer = setInterval(() => {
-							console.log(`还剩${total}个，${instanceNum}个正在进行`)
 							if (instanceNum < maxNum) {
 								resolve(0)
 							}
@@ -76,9 +74,12 @@ module.exports = function fanyi(word, from = 'zh', to = 'en') {
 				if (!data.trans_result.length) return ''
 
 				resolve(
-					data.trans_result.map(v => {
-						return v.dst
-					})
+					{
+						data:data.trans_result.map(v => {
+							return v.dst
+						}),
+						total
+					}
 				)
 			})
 			.catch(err => {

@@ -1,7 +1,8 @@
 import  axios from 'axios'
-import SparkMD5 from 'spark-md5'
+
 // const appid = '20201208000641832'
 // const secret = 'QHFmDIXHEK6JGmR8S3Vg'
+const SparkMD5 = require('spark-md5')
 
 const appid = "20201215000647582";
 const secret = "0IfZkeEAc8PkRIseU_7y";
